@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "entelclient",
-  "version": "0.1.0",
+  "version": "${version}",
   "name": "Entel Client",
   "environment": "client",
   "entrypoints": {
