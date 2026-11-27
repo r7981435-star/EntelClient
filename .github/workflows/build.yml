@@ -1,5 +1,16 @@
 name: Build Entel Client
-on: [push, workflow_dispatch]
+on:
+  push:
+    paths:
+      - 'src/**'
+      - '**/*.gradle'
+      - '**/*.gradle.kts'
+      - 'gradle.properties'
+      - 'gradle/**'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
