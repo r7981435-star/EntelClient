@@ -14,10 +14,9 @@ A custom client-side utility and cheat mod with configurable modules and an in-g
 
 ## Download and install
 
-1. Visit [GitHub Actions](https://github.com/r7981435-star/EntelClient/actions).
-2. Select a successful build and download the EntelClient artifact.
-3. Extract the ZIP and place the regular mod JAR in your Minecraft mods folder alongside Fabric API for 1.21.11.
-4. Launch Minecraft with Fabric and press Right Shift.
+1. Go to the releases page
+2. Download the latest release
+3. Add to your game and have fun!
 
 ## Build from source
 
