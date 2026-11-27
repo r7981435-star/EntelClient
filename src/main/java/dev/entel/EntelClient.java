@@ -23,7 +23,7 @@ public class EntelClient implements ClientModInitializer {
  static final Set<String> reported=new HashSet<>();
  public void onInitializeClient(){
  guiKey=KeyBindingHelper.registerKeyBinding(new KeyMapping("key.entelclient.gui",GLFW.GLFW_KEY_RIGHT_SHIFT,KeyMapping.Category.register(Identifier.fromNamespaceAndPath("entelclient","controls"))));
- for(String s:List.of("Sprint","AutoRespawn","BaseFinder","Fullbright","AutoJump","SafeWalk","AutoAttack","AutoUse","Coordinates","AntiAFK","AutoSneak","NoJumpDelay","AutoSwim","SpeedHUD","DirectionHUD","HealthHUD","AutoTotem")) modules.put(s,false);
+ for(String s:List.of("Sprint","AutoRespawn","BaseFinder","Fullbright","AutoJump","SafeWalk","AutoAttack","AutoUse","Coordinates","AntiAFK","AutoSneak","NoJumpDelay","AutoSwim","SpeedHUD","DirectionHUD","HealthHUD","AutoTotem","Scaffold")) modules.put(s,false);
  try { Properties p=new Properties(); if(Files.exists(config)){try(var in=Files.newInputStream(config)){p.load(in);} modules.replaceAll((n,v)->Boolean.parseBoolean(p.getProperty(n,"false")));}}catch(Exception ignored){}
  ClientTickEvents.END_CLIENT_TICK.register(c->{
  while(guiKey.consumeClick())if(c.screen==null)c.setScreen(new Menu());
@@ -32,6 +32,7 @@ public class EntelClient implements ClientModInitializer {
  if(modules.get("AutoRespawn")&&c.player.isDeadOrDying())c.player.respawn();
  if(modules.get("Fullbright"))c.player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NIGHT_VISION,300,0,false,false,false));
  if(c.screen==null){
+ if(modules.get("Scaffold")) scaffold(c);
  if(modules.get("AutoJump")&&c.player.onGround()&&c.options.keyUp.isDown())c.player.jumpFromGround();
  if(modules.get("SafeWalk")&&c.player.onGround()&&c.level.isEmptyBlock(BlockPos.containing(c.player.getX()+c.player.getDeltaMovement().x*2,c.player.getY()-0.5,c.player.getZ()+c.player.getDeltaMovement().z*2)))c.player.setShiftKeyDown(true);
  if(modules.get("AutoAttack")&&c.crosshairPickEntity!=null&&c.player.getAttackStrengthScale(0)>=1&&c.gameMode!=null){c.gameMode.attack(c.player,c.crosshairPickEntity);c.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);}
@@ -66,9 +67,28 @@ public class EntelClient implements ClientModInitializer {
  }
  });
  }
+ static void scaffold(Minecraft c){
+ if(c.gameMode==null||c.player==null||c.level==null)return;
+ if(!c.options.keyUp.isDown()&&!c.options.keyDown.isDown()&&!c.options.keyLeft.isDown()&&!c.options.keyRight.isDown())return;
+ BlockPos target=BlockPos.containing(c.player.getX(),c.player.getY()-0.5,c.player.getZ());
+ if(!c.level.getBlockState(target).canBeReplaced())return;
+ var hand=net.minecraft.world.InteractionHand.MAIN_HAND;
+ int old=c.player.getInventory().getSelectedSlot(), slot=-1;
+ if(c.player.getOffhandItem().getItem() instanceof net.minecraft.world.item.BlockItem)hand=net.minecraft.world.InteractionHand.OFF_HAND;
+ else {for(int i=0;i<9;i++)if(c.player.getInventory().getItem(i).getItem() instanceof net.minecraft.world.item.BlockItem){slot=i;break;}if(slot<0)return;}
+ for(var dir:net.minecraft.core.Direction.values()){
+ BlockPos support=target.relative(dir);
+ if(c.level.getBlockState(support).canBeReplaced())continue;
+ var face=dir.getOpposite();
+ var hit=net.minecraft.world.phys.Vec3.atCenterOf(support).add(face.getStepX()*0.5,face.getStepY()*0.5,face.getStepZ()*0.5);
+ if(slot>=0)c.player.getInventory().setSelectedSlot(slot);
+ try{var result=c.gameMode.useItemOn(c.player,hand,new net.minecraft.world.phys.BlockHitResult(hit,face,support,false));if(result.consumesAction())c.player.swing(hand);}finally{if(slot>=0)c.player.getInventory().setSelectedSlot(old);}
+ break;
+ }
+ }
  static void save(){try{Files.createDirectories(config.getParent());Properties p=new Properties();modules.forEach((n,v)->p.setProperty(n,v.toString()));try(var out=Files.newOutputStream(config)){p.store(out,"Entel Client");}}catch(Exception ignored){}}
  static class Menu extends Screen{
- final String[][] groups={{"Combat","AutoAttack","AutoTotem"},{"Movement","Sprint","AutoJump","SafeWalk","AutoSneak","NoJumpDelay","AutoSwim"},{"Render","Fullbright","Coordinates","SpeedHUD","DirectionHUD","HealthHUD"},{"Player","AutoRespawn","AutoUse","AntiAFK"},{"World","BaseFinder"}};
+ final String[][] groups={{"Combat","AutoAttack","AutoTotem"},{"Movement","Sprint","AutoJump","SafeWalk","AutoSneak","NoJumpDelay","AutoSwim"},{"Render","Fullbright","Coordinates","SpeedHUD","DirectionHUD","HealthHUD"},{"Player","AutoRespawn","AutoUse","AntiAFK"},{"World","BaseFinder","Scaffold"}};
  Menu(){super(Component.literal("Entel Client"));}
  protected void init(){
  int cols=width>=620?5:width>=360?3:2;
